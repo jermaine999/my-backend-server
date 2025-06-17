@@ -135,6 +135,13 @@ export default function MathGame() {
     setCurrentProblem(problem);
   }, [selectedGameMode]);
 
+  // Generate first problem when game starts
+  useEffect(() => {
+    if (gameState === 'playing' && currentProblem.firstNumber === 0) {
+      generateNewProblem();
+    }
+  }, [gameState, generateNewProblem, currentProblem.firstNumber]);
+
   const goToModeSelection = () => {
     if (!playerName.trim()) {
       alert('Please enter your name!');
@@ -150,7 +157,7 @@ export default function MathGame() {
     setTimeRemaining(180);
     setFeedback(null);
     setUserAnswer('');
-    generateNewProblem();
+    setCurrentProblem({ firstNumber: 0, secondNumber: 0, answer: 0 }); // Reset to trigger new problem generation
   };
 
   const submitAnswer = () => {
@@ -189,7 +196,7 @@ export default function MathGame() {
   };
 
   const saveScore = () => {
-    const previousBest = bestScore?.bestScore || 0;
+    const previousBest = bestScoreData?.bestScore || 0;
     setPersonalBest(Math.max(previousBest, currentScore));
     setIsNewHighScore(currentScore > previousBest);
     
@@ -304,48 +311,49 @@ export default function MathGame() {
     );
   }
 
+  // Playing screen
   if (gameState === 'playing') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-skyblue to-turquoise p-4" onKeyPress={handleKeyPress}>
+      <div className="h-screen bg-gradient-to-br from-skyblue to-turquoise flex flex-col overflow-hidden" onKeyPress={handleKeyPress}>
         {/* Timer and Score Header */}
-        <div className="flex justify-between items-center mb-6 bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-          <div className="flex items-center space-x-4">
-            <div className="bg-white rounded-xl p-3 shadow-lg">
-              <Clock className="w-8 h-8 text-coral" />
+        <div className="flex justify-between items-center p-4 bg-white/20 backdrop-blur-sm">
+          <div className="flex items-center space-x-3">
+            <div className="bg-white rounded-xl p-2 shadow-lg">
+              <Clock className="w-6 h-6 text-coral" />
             </div>
             <div>
-              <div className="text-white text-sm font-semibold">Time Left</div>
-              <div className="text-3xl font-fredoka text-white">{formatTime(timeRemaining)}</div>
+              <div className="text-white text-sm font-semibold">Time</div>
+              <div className="text-2xl font-fredoka text-white">{formatTime(timeRemaining)}</div>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="bg-white rounded-xl p-3 shadow-lg">
-              <Star className="w-8 h-8 text-sunny" />
+          <div className="flex items-center space-x-3">
+            <div className="bg-white rounded-xl p-2 shadow-lg">
+              <Star className="w-6 h-6 text-sunny" />
             </div>
             <div>
               <div className="text-white text-sm font-semibold">Score</div>
-              <div className="text-3xl font-fredoka text-white">{currentScore}</div>
+              <div className="text-2xl font-fredoka text-white">{currentScore}</div>
             </div>
           </div>
         </div>
 
         {/* Main Game Area */}
-        <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
-          {/* Math Problem Section */}
-          <div className="flex-1">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
-              <h2 className="text-2xl font-fredoka text-darkblue mb-8">Solve this problem!</h2>
+        <div className="flex-1 flex flex-row p-4 gap-6 min-h-0">
+          {/* Left Side - Math Problem */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-md w-full">
+              <h2 className="text-xl font-fredoka text-darkblue mb-6">Solve this problem!</h2>
               
               {/* Math problem display with proper vertical alignment */}
-              <div className="text-center mb-8">
-                <div className="inline-block text-right">
-                  <div className="text-6xl md:text-7xl font-bold text-darkblue mb-2">{currentProblem.firstNumber}</div>
-                  <div className="flex items-center justify-end">
-                    <span className="text-6xl md:text-7xl font-bold text-darkblue mr-2">+</span>
-                    <span className="text-6xl md:text-7xl font-bold text-darkblue">{currentProblem.secondNumber}</span>
+              <div className="text-center mb-6">
+                <div className="inline-block text-right font-mono">
+                  <div className="text-5xl md:text-6xl font-bold text-darkblue mb-2 leading-tight">{currentProblem.firstNumber}</div>
+                  <div className="flex items-center justify-end mb-2">
+                    <span className="text-5xl md:text-6xl font-bold text-darkblue mr-2">+</span>
+                    <span className="text-5xl md:text-6xl font-bold text-darkblue leading-tight">{currentProblem.secondNumber}</span>
                   </div>
-                  <div className="border-t-4 border-darkblue mt-4 mb-6 w-full"></div>
+                  <div className="border-t-4 border-darkblue mt-2 mb-4 w-full"></div>
                 </div>
               </div>
 
@@ -355,8 +363,8 @@ export default function MathGame() {
                   type="number" 
                   value={userAnswer}
                   onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="Your answer..."
-                  className="w-full max-w-xs mx-auto px-6 py-4 text-3xl text-center border-4 border-mint rounded-2xl focus:border-coral focus:outline-none focus:ring-4 focus:ring-coral/20 transition-all duration-300"
+                  placeholder="Answer"
+                  className="w-full max-w-xs mx-auto px-4 py-3 text-2xl text-center border-4 border-mint rounded-2xl focus:border-coral focus:outline-none focus:ring-4 focus:ring-coral/20 transition-all duration-300 font-mono"
                   autoFocus
                 />
               </div>
@@ -364,33 +372,33 @@ export default function MathGame() {
               {/* Submit Button */}
               <button 
                 onClick={submitAnswer}
-                className="bg-gradient-to-r from-mint to-turquoise text-white text-2xl font-fredoka py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-mint/50"
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white text-xl font-fredoka py-3 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/50"
               >
-                <Check className="inline-block w-6 h-6 mr-3" />
-                Submit Answer
+                <Banknote className="inline-block w-5 h-5 mr-2" />
+                Put it in the bank!
               </button>
             </div>
           </div>
 
-          {/* Feedback Section */}
-          <div className="lg:w-80">
-            <div className="bg-white rounded-3xl shadow-2xl p-6 h-full">
-              <h3 className="text-xl font-fredoka text-darkblue mb-4 text-center">Feedback</h3>
+          {/* Right Side - Feedback */}
+          <div className="w-80 flex items-center justify-center">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 h-96 w-full flex flex-col">
+              <h3 className="text-lg font-fredoka text-darkblue mb-4 text-center">Feedback</h3>
               
-              <div className="text-center h-full flex flex-col justify-center">
+              <div className="flex-1 flex flex-col justify-center items-center text-center">
                 {feedback ? (
-                  <div className={`rounded-xl p-4 border-2 ${
+                  <div className={`w-full rounded-xl p-4 border-2 ${
                     feedback.type === 'correct' ? 'bg-green-100 border-green-300' :
                     feedback.type === 'incorrect' ? 'bg-yellow-100 border-yellow-300' :
                     'bg-red-100 border-red-300'
                   }`}>
-                    <div className="text-6xl mb-4">{feedback.emoji}</div>
+                    <div className="text-5xl mb-3">{feedback.emoji}</div>
                     <p className="text-lg font-semibold text-darkblue">{feedback.message}</p>
                   </div>
                 ) : (
                   <>
-                    <div className="text-6xl mb-4">🎯</div>
-                    <p className="text-lg text-gray-600">Submit your answer to see feedback!</p>
+                    <div className="text-5xl mb-3">🎯</div>
+                    <p className="text-lg text-gray-600">Submit your answer!</p>
                   </>
                 )}
               </div>
@@ -442,12 +450,12 @@ export default function MathGame() {
               <p className="text-gray-500 text-center">No scores yet!</p>
             ) : (
               leaderboard.map((score, index) => (
-                <div key={`${score.name}-${score.date}`} className="flex justify-between items-center bg-lightgray rounded-xl p-3">
+                <div key={`${score.playerName}-${score.createdAt}`} className="flex justify-between items-center bg-lightgray rounded-xl p-3">
                   <div className="flex items-center space-x-3">
                     <span className="w-6 h-6 rounded-full bg-coral text-white text-sm flex items-center justify-center font-bold">
                       {index + 1}
                     </span>
-                    <span className="font-semibold text-darkblue">{score.name}</span>
+                    <span className="font-semibold text-darkblue">{score.playerName}</span>
                   </div>
                   <span className="text-coral font-bold">{score.score}</span>
                 </div>
