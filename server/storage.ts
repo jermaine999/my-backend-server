@@ -59,7 +59,7 @@ export class DatabaseStorage implements IStorage {
     const scores = await db
       .select()
       .from(gameScores)
-      .where(eq(gameScores.playerName, playerName))
+      .where(and(eq(gameScores.playerName, playerName), eq(gameScores.gameMode, gameMode)))
       .orderBy(desc(gameScores.score))
       .limit(1);
     

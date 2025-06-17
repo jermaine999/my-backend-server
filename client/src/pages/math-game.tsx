@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calculator, Clock, Star, Trophy, Play, Check, RotateCcw } from 'lucide-react';
+import { Calculator, Clock, Star, Trophy, Play, Banknote, RotateCcw } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import type { GameScore } from '@shared/schema';
 
-type GameState = 'start' | 'playing' | 'ended';
+type GameState = 'start' | 'modeSelection' | 'playing' | 'ended';
+type GameMode = 'purple' | 'blue' | 'orange';
 
 interface Problem {
   firstNumber: number;
@@ -9,29 +13,90 @@ interface Problem {
   answer: number;
 }
 
-interface Score {
-  name: string;
-  score: number;
-  date: string;
-}
+const gameModeConfig = {
+  purple: {
+    name: 'Purple Game',
+    description: 'Single digit + Single digit',
+    color: 'from-purple-500 to-purple-600',
+    hoverColor: 'hover:from-purple-600 hover:to-purple-700',
+    generateProblem: () => {
+      const first = Math.floor(Math.random() * 9) + 1;
+      const second = Math.floor(Math.random() * 9) + 1;
+      return { firstNumber: first, secondNumber: second, answer: first + second };
+    }
+  },
+  blue: {
+    name: 'Blue Game',
+    description: 'Two-digit + Single digit',
+    color: 'from-blue-500 to-blue-600',
+    hoverColor: 'hover:from-blue-600 hover:to-blue-700',
+    generateProblem: () => {
+      const first = Math.floor(Math.random() * 90) + 10;
+      const second = Math.floor(Math.random() * 9) + 1;
+      return { firstNumber: first, secondNumber: second, answer: first + second };
+    }
+  },
+  orange: {
+    name: 'Orange Game',
+    description: 'Two-digit + Two-digit',
+    color: 'from-orange-500 to-orange-600',
+    hoverColor: 'hover:from-orange-600 hover:to-orange-700',
+    generateProblem: () => {
+      const first = Math.floor(Math.random() * 90) + 10;
+      const second = Math.floor(Math.random() * 90) + 10;
+      return { firstNumber: first, secondNumber: second, answer: first + second };
+    }
+  }
+};
 
 export default function MathGame() {
   const [gameState, setGameState] = useState<GameState>('start');
   const [playerName, setPlayerName] = useState('');
+  const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('purple');
   const [timeRemaining, setTimeRemaining] = useState(180); // 3 minutes
   const [currentScore, setCurrentScore] = useState(0);
   const [currentProblem, setCurrentProblem] = useState<Problem>({ firstNumber: 0, secondNumber: 0, answer: 0 });
   const [userAnswer, setUserAnswer] = useState('');
   const [feedback, setFeedback] = useState<{type: string, message: string, emoji: string} | null>(null);
-  const [problemDifficulty, setProblemDifficulty] = useState(1);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [personalBest, setPersonalBest] = useState(0);
-  const [leaderboard, setLeaderboard] = useState<Score[]>([]);
 
-  // Load leaderboard on component mount
-  useEffect(() => {
-    loadLeaderboard();
-  }, []);
+  // API queries and mutations
+  const { data: leaderboard = [] } = useQuery({
+    queryKey: ['/api/leaderboard', selectedGameMode],
+    queryFn: async () => {
+      const response = await fetch(`/api/leaderboard?gameMode=${selectedGameMode}`);
+      if (!response.ok) throw new Error('Failed to fetch leaderboard');
+      return (await response.json()) as GameScore[];
+    },
+    enabled: gameState === 'ended'
+  });
+
+  const { data: bestScoreData } = useQuery({
+    queryKey: ['/api/best-score', playerName, selectedGameMode],
+    queryFn: async () => {
+      const response = await fetch(`/api/best-score?playerName=${encodeURIComponent(playerName)}&gameMode=${selectedGameMode}`);
+      if (!response.ok) throw new Error('Failed to fetch best score');
+      return (await response.json()) as { bestScore: number };
+    },
+    enabled: gameState === 'ended' && !!playerName
+  });
+
+  const saveScoreMutation = useMutation({
+    mutationFn: async (scoreData: { playerName: string; score: number; gameMode: string }) => {
+      const response = await fetch('/api/scores', {
+        method: 'POST',
+        body: JSON.stringify(scoreData),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to save score');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/leaderboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/best-score'] });
+    }
+  });
 
   // Timer effect
   useEffect(() => {
@@ -52,9 +117,9 @@ export default function MathGame() {
     return () => clearInterval(interval);
   }, [gameState, timeRemaining]);
 
-  // Clear feedback after 2 seconds
+  // Clear feedback after 2 seconds - but only for correct answers
   useEffect(() => {
-    if (feedback) {
+    if (feedback && feedback.type === 'correct') {
       const timer = setTimeout(() => {
         setFeedback(null);
         if (gameState === 'playing') {
@@ -65,59 +130,24 @@ export default function MathGame() {
     }
   }, [feedback, gameState]);
 
-  const loadLeaderboard = () => {
-    const scores = JSON.parse(localStorage.getItem('mathGameScores') || '[]') as Score[];
-    setLeaderboard(scores.sort((a, b) => b.score - a.score).slice(0, 5));
-  };
-
   const generateNewProblem = useCallback(() => {
-    let firstNumber: number, secondNumber: number;
-    
-    // Increase difficulty based on score
-    let difficulty = problemDifficulty;
-    if (currentScore >= 100) {
-      difficulty = 3; // double + double
-    } else if (currentScore >= 40) {
-      difficulty = 2; // double + single
-    }
-    
-    setProblemDifficulty(difficulty);
-    
-    switch (difficulty) {
-      case 1: // single + single
-        firstNumber = Math.floor(Math.random() * 9) + 1;
-        secondNumber = Math.floor(Math.random() * 9) + 1;
-        break;
-      case 2: // double + single
-        firstNumber = Math.floor(Math.random() * 90) + 10;
-        secondNumber = Math.floor(Math.random() * 9) + 1;
-        break;
-      case 3: // double + double
-        firstNumber = Math.floor(Math.random() * 90) + 10;
-        secondNumber = Math.floor(Math.random() * 90) + 10;
-        break;
-      default:
-        firstNumber = Math.floor(Math.random() * 9) + 1;
-        secondNumber = Math.floor(Math.random() * 9) + 1;
-    }
-    
-    setCurrentProblem({
-      firstNumber,
-      secondNumber,
-      answer: firstNumber + secondNumber
-    });
-  }, [currentScore, problemDifficulty]);
+    const problem = gameModeConfig[selectedGameMode].generateProblem();
+    setCurrentProblem(problem);
+  }, [selectedGameMode]);
 
-  const startGame = () => {
+  const goToModeSelection = () => {
     if (!playerName.trim()) {
-      alert('Please enter your name to start!');
+      alert('Please enter your name!');
       return;
     }
-    
+    setGameState('modeSelection');
+  };
+
+  const startGame = (gameMode: GameMode) => {
+    setSelectedGameMode(gameMode);
     setGameState('playing');
     setCurrentScore(0);
     setTimeRemaining(180);
-    setProblemDifficulty(1);
     setFeedback(null);
     setUserAnswer('');
     generateNewProblem();
@@ -142,16 +172,15 @@ export default function MathGame() {
         message: 'Excellent! Well done!',
         emoji: '🎉'
       });
+      setUserAnswer('');
     } else {
-      setCurrentScore(prev => prev + 1);
       setFeedback({
         type: 'incorrect',
-        message: `Good try! The answer was ${currentProblem.answer}`,
-        emoji: '💪'
+        message: 'Try that again!',
+        emoji: '🤔'
       });
+      // Don't clear the answer for incorrect responses - let them try again
     }
-    
-    setUserAnswer('');
   };
 
   const endGame = () => {
@@ -160,30 +189,22 @@ export default function MathGame() {
   };
 
   const saveScore = () => {
-    const scores = JSON.parse(localStorage.getItem('mathGameScores') || '[]') as Score[];
-    const playerScores = scores.filter(score => score.name === playerName);
-    const best = playerScores.length > 0 ? Math.max(...playerScores.map(s => s.score)) : 0;
+    const previousBest = bestScore?.bestScore || 0;
+    setPersonalBest(Math.max(previousBest, currentScore));
+    setIsNewHighScore(currentScore > previousBest);
     
-    setPersonalBest(Math.max(best, currentScore));
-    setIsNewHighScore(currentScore > best);
-    
-    // Add new score
-    const newScore: Score = {
-      name: playerName,
+    // Save to database
+    saveScoreMutation.mutate({
+      playerName,
       score: currentScore,
-      date: new Date().toISOString()
-    };
-    
-    scores.push(newScore);
-    localStorage.setItem('mathGameScores', JSON.stringify(scores));
-    loadLeaderboard();
+      gameMode: selectedGameMode
+    });
   };
 
   const resetGame = () => {
     setGameState('start');
     setCurrentScore(0);
     setTimeRemaining(180);
-    setProblemDifficulty(1);
     setFeedback(null);
     setUserAnswer('');
     setIsNewHighScore(false);
@@ -199,7 +220,7 @@ export default function MathGame() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (gameState === 'start') {
-        startGame();
+        goToModeSelection();
       } else if (gameState === 'playing') {
         submitAnswer();
       } else if (gameState === 'ended') {
@@ -208,13 +229,14 @@ export default function MathGame() {
     }
   };
 
+  // Start screen
   if (gameState === 'start') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-skyblue to-turquoise flex items-center justify-center p-4" onKeyPress={handleKeyPress}>
+      <div className="h-screen bg-gradient-to-br from-skyblue to-turquoise flex items-center justify-center p-4 overflow-hidden" onKeyPress={handleKeyPress}>
         <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg text-center transform transition-all duration-500 hover:scale-105">
           <div className="mb-6">
-            <Calculator className="w-24 h-24 text-coral mx-auto mb-4" />
-            <h1 className="text-4xl md:text-5xl font-fredoka text-darkblue mb-2">Math Adventure!</h1>
+            <Calculator className="w-20 h-20 text-coral mx-auto mb-4" />
+            <h1 className="text-3xl md:text-4xl font-fredoka text-darkblue mb-2">Math Adventure!</h1>
             <p className="text-lg text-gray-600">Let's practice addition together!</p>
           </div>
           
@@ -233,11 +255,49 @@ export default function MathGame() {
           </div>
           
           <button 
-            onClick={startGame}
-            className="w-full bg-gradient-to-r from-coral to-pink text-white text-2xl font-fredoka py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-coral/50"
+            onClick={goToModeSelection}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white text-2xl font-fredoka py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-500/50"
           >
             <Play className="inline-block w-6 h-6 mr-3" />
-            Start Game!
+            Let's Go!
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mode selection screen
+  if (gameState === 'modeSelection') {
+    return (
+      <div className="h-screen bg-gradient-to-br from-skyblue to-turquoise flex items-center justify-center p-4 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-2xl text-center">
+          <div className="mb-8">
+            <Star className="w-20 h-20 text-sunny mx-auto mb-4" />
+            <h1 className="text-3xl md:text-4xl font-fredoka text-darkblue mb-2">Choose Your Game!</h1>
+            <p className="text-lg text-gray-600">Hi {playerName}! Pick a challenge level:</p>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-3">
+            {(Object.keys(gameModeConfig) as GameMode[]).map((mode) => {
+              const config = gameModeConfig[mode];
+              return (
+                <button
+                  key={mode}
+                  onClick={() => startGame(mode)}
+                  className={`bg-gradient-to-br ${config.color} ${config.hoverColor} text-white p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-${mode}-500/50`}
+                >
+                  <div className="text-2xl font-fredoka mb-2">{config.name}</div>
+                  <div className="text-sm opacity-90">{config.description}</div>
+                </button>
+              );
+            })}
+          </div>
+          
+          <button 
+            onClick={() => setGameState('start')}
+            className="mt-8 text-darkblue hover:text-coral transition-colors duration-300 font-semibold"
+          >
+            ← Back to Name Entry
           </button>
         </div>
       </div>
