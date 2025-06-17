@@ -411,53 +411,50 @@ export default function MathGame() {
 
   // End screen
   return (
-    <div className="min-h-screen bg-gradient-to-br from-skyblue to-turquoise flex items-center justify-center p-4" onKeyPress={handleKeyPress}>
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-2xl text-center">
-        <div className="mb-6">
-          <Trophy className="w-24 h-24 text-sunny mx-auto mb-4" />
-          <h1 className="text-4xl md:text-5xl font-fredoka text-darkblue mb-2">Game Over!</h1>
-          <p className="text-lg text-gray-600">Great job practicing math!</p>
+    <div className="h-screen bg-gradient-to-br from-skyblue to-turquoise flex items-center justify-center p-4 overflow-hidden" onKeyPress={handleKeyPress}>
+      <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-xl text-center flex flex-col justify-center h-auto max-h-[90vh] overflow-y-auto">
+        <div className="mb-4">
+          <Trophy className="w-16 h-16 text-sunny mx-auto mb-3" />
+          <h1 className="text-3xl md:text-4xl font-fredoka text-darkblue mb-2">Game Over!</h1>
+          <p className="text-base text-gray-600">Great job practicing math, {playerName}!</p>
         </div>
 
-        {/* Final Score Display */}
-        <div className="bg-gradient-to-r from-mint to-turquoise rounded-2xl p-6 mb-6">
-          <div className="text-white">
-            <div className="text-lg font-semibold mb-2">Final Score</div>
-            <div className="text-5xl font-fredoka">{currentScore}</div>
+        {/* Compact Score Section */}
+        <div className="mb-4">
+          {/* Final Score and Best Score in one block */}
+          <div className="bg-gradient-to-r from-mint to-turquoise rounded-2xl p-4 mb-3">
+            <div className="text-white">
+              <div className="text-base font-semibold mb-1">Your Final Score</div>
+              <div className="text-4xl font-fredoka mb-2">{currentScore}</div>
+              <div className="text-sm opacity-90">Best Score: {personalBest}</div>
+            </div>
           </div>
-        </div>
 
-        {/* High Score Section */}
-        <div className="mb-6">
+          {/* New High Score Banner */}
           {isNewHighScore && (
-            <div className="bg-gradient-to-r from-sunny to-pink rounded-2xl p-4 mb-4">
-              <Star className="w-12 h-12 text-white mx-auto mb-2" />
-              <div className="text-white text-xl font-fredoka">NEW HIGH SCORE!</div>
+            <div className="bg-gradient-to-r from-sunny to-pink rounded-xl p-3 mb-3">
+              <Star className="w-8 h-8 text-white mx-auto mb-1" />
+              <div className="text-white text-lg font-fredoka">NEW HIGH SCORE!</div>
             </div>
           )}
-          
-          <div className="bg-lightgray rounded-2xl p-4">
-            <div className="text-darkblue font-semibold mb-2">Your Best Score</div>
-            <div className="text-2xl font-fredoka text-darkblue">{personalBest}</div>
-          </div>
         </div>
 
-        {/* Leaderboard */}
-        <div className="mb-8">
-          <h3 className="text-xl font-fredoka text-darkblue mb-4">Top Scores</h3>
-          <div className="space-y-2">
+        {/* Compact Leaderboard */}
+        <div className="mb-4">
+          <h3 className="text-lg font-fredoka text-darkblue mb-3">Top Scores - {gameModeConfig[selectedGameMode].name}</h3>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
             {leaderboard.length === 0 ? (
-              <p className="text-gray-500 text-center">No scores yet!</p>
+              <p className="text-gray-500 text-center text-sm">No scores yet!</p>
             ) : (
-              leaderboard.map((score, index) => (
-                <div key={`${score.playerName}-${score.createdAt}`} className="flex justify-between items-center bg-lightgray rounded-xl p-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="w-6 h-6 rounded-full bg-coral text-white text-sm flex items-center justify-center font-bold">
+              leaderboard.slice(0, 5).map((score, index) => (
+                <div key={`${score.playerName}-${score.createdAt}`} className="flex justify-between items-center bg-lightgray rounded-lg p-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-5 h-5 rounded-full bg-coral text-white text-xs flex items-center justify-center font-bold">
                       {index + 1}
                     </span>
-                    <span className="font-semibold text-darkblue">{score.playerName}</span>
+                    <span className="font-semibold text-darkblue text-sm">{score.playerName}</span>
                   </div>
-                  <span className="text-coral font-bold">{score.score}</span>
+                  <span className="text-coral font-bold text-sm">{score.score}</span>
                 </div>
               ))
             )}
@@ -467,9 +464,9 @@ export default function MathGame() {
         {/* Play Again Button */}
         <button 
           onClick={resetGame}
-          className="w-full bg-gradient-to-r from-coral to-pink text-white text-2xl font-fredoka py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-coral/50"
+          className="w-full bg-gradient-to-r from-coral to-pink text-white text-xl font-fredoka py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-coral/50"
         >
-          <RotateCcw className="inline-block w-6 h-6 mr-3" />
+          <RotateCcw className="inline-block w-5 h-5 mr-2" />
           Play Again!
         </button>
       </div>
