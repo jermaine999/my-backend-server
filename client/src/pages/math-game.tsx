@@ -454,7 +454,7 @@ export default function MathGame() {
                     </span>
                     <span className="font-semibold text-darkblue">{score.playerName}</span>
                   </div>
-                  <span className="text-coral font-bold">{score.score}</span>
+                  <span className="font-bold text-[#3c5c3e]">{score.score}</span>
                 </div>
               ))
             )}
