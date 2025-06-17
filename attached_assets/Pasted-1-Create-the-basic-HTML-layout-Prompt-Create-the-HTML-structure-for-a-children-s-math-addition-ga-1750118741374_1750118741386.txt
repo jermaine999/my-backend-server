@@ -1,0 +1,99 @@
+1. Create the basic HTML layout
+Prompt:
+
+Create the HTML structure for a children's math addition game. The layout should include:
+
+A timer display at the top (shows 3:00 and counts down)
+
+A display area for the vertical addition problem
+
+An input box for entering the answer
+
+A submit button
+
+A score display area
+
+A message/image area for feedback (right or wrong)
+
+A final screen that appears after time runs out to show the player's name, score, and high score
+
+2. Add styling with CSS
+Prompt:
+
+Add CSS to style the HTML for a fun, child-friendly look. Use large text, bright colors, rounded input fields, and spacing to make it easy to read and interact with. The vertical addition problem should be centered and styled like a worksheet (e.g., 2-digit numbers stacked with a line underneath). Add playful styles for the success and "good try" feedback messages/images.
+
+3. Write the JavaScript logic
+Prompt:
+
+Write JavaScript to:
+
+Start a 3-minute timer when the page loads
+
+Generate a random addition problem. Begin with single-digit + single-digit, then mix in 2-digit + 1-digit, and eventually 2-digit + 2-digit problems.
+
+Display the numbers stacked vertically, with the second number right-aligned to the first (like a paper worksheet)
+
+When the student submits an answer:
+
+If correct: show a happy image/message and add +20 points
+
+If incorrect: show "Good try!" and add +1 point
+
+After submission, immediately show a new problem
+
+Keep track of and display the current score
+
+When the timer reaches 0:
+
+Stop the game
+
+Show a final screen with the student’s total score
+
+Ask for their name or nickname
+
+Compare their score to their past score using localStorage and show “New High Score!” if it beats the previous one
+
+Optionally list names and scores of past users using localStorage
+
+4. Add vertical alignment for problems
+Prompt:
+
+Adjust the CSS and JS so that addition problems appear vertically aligned like this:
+
+markdown
+Copy
+Edit
+  12
++  9
+----
+[input box]
+Use a CSS-styled line as the horizontal bar and align digits with spacing so that 1’s digits and 10’s digits are aligned properly.
+
+5. Add fun images and feedback
+Prompt:
+
+In the JavaScript, show a random “happy” image (like a smiley face, star, cartoon character) when the student answers correctly, and show a different image/message when they answer incorrectly. You can use placeholder images like emoji or links to free images for now.
+
+6. Implement scoring and localStorage
+Prompt:
+
+Use localStorage to:
+
+Save the player’s name and score after the timer ends
+
+Save the highest score for that player
+
+Display “You got a new high score!” if the current score is higher than their previous
+
+Keep a local leaderboard with names and scores (optional)
+
+7. Make it responsive and mobile-friendly
+Prompt:
+
+Update the CSS to make the game responsive so it looks good on tablets and phones as well as desktops. Use flexible font sizes, input boxes, and layout adjustments for smaller screens.
+
+✅ Bonus (Optional):
+Add a “Start Game” screen before the game begins
+Prompt:
+
+Add a start screen where the student enters their name or nickname and clicks “Start Game.” The game timer and questions begin only after clicking start.
