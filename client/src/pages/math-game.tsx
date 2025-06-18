@@ -464,7 +464,7 @@ export default function MathGame() {
         {/* Play Again Button */}
         <button 
           onClick={resetGame}
-          className="w-full bg-gradient-to-r from-coral to-pink text-white text-2xl font-fredoka py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-coral/50"
+          className="w-full bg-gradient-to-r from-coral to-pink text-black text-2xl font-fredoka py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-coral/50"
         >
           <RotateCcw className="inline-block w-6 h-6 mr-3" />
           Play Again!
