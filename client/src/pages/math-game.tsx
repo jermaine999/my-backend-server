@@ -449,7 +449,7 @@ export default function MathGame() {
               leaderboard.map((score, index) => (
                 <div key={`${score.playerName}-${score.createdAt}`} className="flex justify-between items-center bg-lightgray rounded-xl p-3">
                   <div className="flex items-center space-x-3">
-                    <span className="w-6 h-6 rounded-full bg-coral text-white text-sm flex items-center justify-center font-bold">
+                    <span className="w-6 h-6 rounded-full bg-coral text-black text-sm flex items-center justify-center font-bold">
                       {index + 1}
                     </span>
                     <span className="font-semibold text-darkblue">{score.playerName}</span>
